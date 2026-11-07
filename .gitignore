@@ -11,3 +11,17 @@ htmlcov/
 *.egg-info/
 build/
 dist/
+
+# Local OPA binaries
+tools/opa_linux_amd64
+tools/opa_linux_amd64.sha256
+
+# Runtime audit data
+audit.jsonl
+logs/
+runtime/
+
+# Python packaging metadata
+*.egg-info/
+build/
+dist/

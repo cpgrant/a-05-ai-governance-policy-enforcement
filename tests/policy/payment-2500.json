@@ -1,0 +1,9 @@
+{
+  "agent_id": "finance-agent",
+  "action": "payment.create",
+  "resource": "erp.payments",
+  "context": {
+    "amount": 2500,
+    "currency": "EUR"
+  }
+}

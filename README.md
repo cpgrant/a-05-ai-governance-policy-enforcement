@@ -73,3 +73,32 @@ prototype, not a production-certified security system.
 
 Protected enterprise actions must not rely on
 unverified prototype enforcement controls.
+
+## Day 2 — Governance Engine & Enforcement
+
+Implemented:
+- OPA/Rego financial authorization policy
+- Python OPA policy adapter
+- FastAPI governance evaluation endpoint
+- Policy Enforcement Point
+- Fail-closed authorization handling
+- JSONL authorization and execution auditing
+- Trusted tool registry prototype
+- Simulated enterprise payment execution
+- Automated policy, API, enforcement and audit tests
+
+Validation:
+- 27 automated tests passing
+
+Security limitations:
+- Agent identity is not yet authenticated.
+- Tool parameters require stronger schema validation.
+- Audit persistence is not production-grade.
+- Human approval is not implemented.
+- Runtime isolation and prevention of direct tool bypass
+  require additional engineering.
+
+Next:
+- Enterprise integration and secure identity binding
+- Human approval lifecycle
+- MCP tool authorization
