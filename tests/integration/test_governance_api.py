@@ -5,7 +5,7 @@ from src.api.main import app
 client = TestClient(app)
 
 
-def evaluate(agent, amount):
+def evaluate(agent_token, agent, amount):
     response = client.post(
         "/governance/evaluate",
         json={
@@ -17,7 +17,13 @@ def evaluate(agent, amount):
                 "currency": "EUR",
             },
         },
+        headers={
+            "Authorization": (
+                f"Bearer {agent_token(agent)}"
+            )
+        },
     )
+
     assert response.status_code == 200
     return response.json()
 
@@ -27,22 +33,22 @@ def test_health():
     assert response.status_code == 200
 
 
-def test_permit():
-    result = evaluate("finance-agent", 2500)
+def test_permit(agent_token):
+    result = evaluate(agent_token, "finance-agent", 2500)
     assert result["decision"] == "PERMIT"
 
 
-def test_require_approval():
-    result = evaluate("finance-agent", 25000)
+def test_require_approval(agent_token):
+    result = evaluate(agent_token, "finance-agent", 25000)
     assert result["decision"] == "REQUIRE_APPROVAL"
     assert "human_approval" in result["obligations"]
 
 
-def test_deny_large_payment():
-    result = evaluate("finance-agent", 75000)
+def test_deny_large_payment(agent_token):
+    result = evaluate(agent_token, "finance-agent", 75000)
     assert result["decision"] == "DENY"
 
 
-def test_deny_unknown_agent():
-    result = evaluate("unknown-agent", 500)
+def test_deny_unknown_agent(agent_token):
+    result = evaluate(agent_token, "unknown-agent", 500)
     assert result["decision"] == "DENY"
