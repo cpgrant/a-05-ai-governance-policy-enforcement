@@ -1,8 +1,8 @@
 # AI-A05 — AI Governance & Policy Enforcement
 
-**Version:** 0.1  
-**Status:** Day 1 Architecture Baseline  
-**Python:** 3.12.3  
+**Version:** 0.1
+**Status:** Day 1 Architecture Baseline
+**Python:** 3.12.3
 **Portfolio:** AI Architecture Series
 
 ## 1. Purpose
