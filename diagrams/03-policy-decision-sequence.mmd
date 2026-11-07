@@ -1,0 +1,38 @@
+sequenceDiagram
+    autonumber
+    participant A as AI Agent
+    participant G as Governance API
+    participant P as Enforcement Point
+    participant O as OPA
+    participant H as Human Approval
+    participant T as Protected Tool
+    participant L as Audit Service
+
+    A->>G: Request action
+    G->>G: Authenticate caller
+    G->>P: Evaluate authorized request
+    P->>O: Evaluate policies
+    O-->>P: Policy result
+
+    alt PERMIT
+        P->>P: Verify obligations
+        P->>T: Execute authorized action
+        T-->>P: Execution result
+        P->>L: Record decision and outcome
+        P-->>A: Return result
+    else REQUIRE_APPROVAL
+        P->>H: Create scoped approval request
+        H-->>P: Approval result
+        alt Approved
+            P->>O: Re-evaluate current authorization
+            O-->>P: Updated policy decision
+            opt Authorization permits execution
+                P->>T: Execute exact approved action
+            end
+        end
+        P->>L: Record approval and outcome
+        P-->>A: Return status or result
+    else DENY
+        P->>L: Record denial
+        P-->>A: Action denied
+    end

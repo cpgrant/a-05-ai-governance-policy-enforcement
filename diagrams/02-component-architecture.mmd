@@ -1,0 +1,43 @@
+flowchart TB
+    CLIENT["Enterprise AI Clients"]
+
+    subgraph A05["AI-A05 Governance Platform"]
+        API["FastAPI Governance API"]
+        ID["Identity Verification"]
+        PEP["Policy Enforcement Point"]
+        PDP["Policy Decision Adapter"]
+        APPROVAL["Human Approval Service"]
+        AUDIT["Audit and Evidence"]
+        EXPLAIN["Explainability"]
+        SANDBOX["Sandbox Controller"]
+        AGENTS["Advisory Governance Agents"]
+
+        API --> ID
+        ID --> PEP
+        PEP --> PDP
+        PEP --> APPROVAL
+        PEP --> AUDIT
+        PDP --> EXPLAIN
+        PEP --> SANDBOX
+        AGENTS -.-> PDP
+        AGENTS -.-> AUDIT
+    end
+
+    OPA["Open Policy Agent / Rego"]
+    DB[("PostgreSQL")]
+    TOOLS["Protected Enterprise Tools"]
+    HUMAN["Human Approver"]
+
+    CLIENT --> API
+    PDP --> OPA
+    APPROVAL <--> HUMAN
+    APPROVAL --> DB
+    AUDIT --> DB
+    SANDBOX --> TOOLS
+    PEP -->|"Authorized execution"| TOOLS
+
+    classDef core fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef external fill:#f1f5f9,stroke:#64748b,color:#0f172a
+
+    class API,ID,PEP,PDP,APPROVAL,AUDIT,EXPLAIN,SANDBOX,AGENTS core
+    class CLIENT,OPA,DB,TOOLS,HUMAN external

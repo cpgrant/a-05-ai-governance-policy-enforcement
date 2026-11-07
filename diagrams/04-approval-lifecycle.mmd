@@ -1,0 +1,23 @@
+stateDiagram-v2
+    [*] --> Requested
+
+    Requested --> Pending: Valid request
+    Requested --> Rejected: Invalid request
+
+    Pending --> Approved: Authorized approver
+    Pending --> Rejected: Approval denied
+    Pending --> Expired: Deadline exceeded
+
+    Approved --> Revalidating: Execution requested
+
+    Revalidating --> Authorized: Policy and scope valid
+    Revalidating --> Rejected: Policy or scope invalid
+    Revalidating --> Expired: Approval expired
+
+    Authorized --> Executed: Protected action succeeds
+    Authorized --> Failed: Execution fails
+
+    Executed --> [*]
+    Failed --> [*]
+    Rejected --> [*]
+    Expired --> [*]

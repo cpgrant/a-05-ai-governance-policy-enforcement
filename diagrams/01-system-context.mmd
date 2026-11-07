@@ -1,0 +1,30 @@
+flowchart TB
+    A02["A02: Agent Orchestration"]
+    A03["A03: Enterprise RAG"]
+    A04["A04: MCP Integration"]
+    A06["A06: Digital Business Twin"]
+
+    A05["A05: Governance Platform"]
+
+    OPA["OPA: Policy Evaluation"]
+    ID["Identity Provider"]
+    HUMAN["Human Approver"]
+    DB["Audit and Approval Storage"]
+    TOOLS["Protected Enterprise Tools"]
+
+    A02 --> A05
+    A03 --> A05
+    A04 --> A05
+    A06 --> A05
+
+    A05 --> OPA
+    A05 --> ID
+    A05 <--> HUMAN
+    A05 --> DB
+    A05 -->|"Authorized execution only"| TOOLS
+
+    classDef governance fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef external fill:#f1f5f9,stroke:#64748b,color:#0f172a
+
+    class A05 governance
+    class A02,A03,A04,A06,OPA,ID,HUMAN,DB,TOOLS external
