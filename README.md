@@ -3,16 +3,43 @@
 ![AI-A05 — Governance and Policy Enforcement Overview](infographics/ai-a05-0-governance-and-policy-enforcement.png)
 
 
-AI-A05 is a small, local reference implementation of policy enforcement for agent requests. It demonstrates authenticated policy evaluation, a server-owned simulated tool registry, an A05-to-A04 MCP adapter, finance approvals, and structured audit records. It is not a production platform.
+## About this project
 
-## Current implementation
+As AI agents become capable of making decisions and carrying out business tasks, organizations need clear rules about what those agents may do, when a person must approve an action, and how decisions can be reviewed afterward.
 
-- FastAPI endpoints authenticate RS256 JWTs against a configured public key, issuer, audience, expiry, and required claims.
-- OPA/Rego evaluates finance and MCP decisions. The protected finance tool path fails closed if evaluation or required pre-execution auditing fails.
-- Tool handlers are server registered. Finance approvals are bound to requester, action, resource, amount, and currency, expire, prevent self-approval, and can be consumed once.
-- Approval state and lifecycle events persist in a local SQLite database (`runtime/approvals.sqlite3` by default). JSONL execution audit files are local evidence, not tamper-resistant storage.
-- The A04 adapter is deliberately limited to the synthetic `get_customer` lookup and validates its exact arguments before invoking A04.
-- All finance operations use a simulation. No real payment is submitted.
+**AI-A05 demonstrates how companies can keep AI agents under clear business rules and human oversight.**
+
+It is a working example of an AI governance system that checks an agent's identity, applies company policies, controls access to business tools, manages human approvals, and records important decisions and actions.
+
+### What the system can do
+
+- **Verify identity:** Check an AI agent's credentials before allowing access.
+- **Enforce business rules:** Decide which actions agents can perform and which must be blocked.
+- **Require human approval:** Require an authorized person to approve sensitive operations.
+- **Control access to business systems:** Demonstrate governed access to enterprise applications and data.
+- **Record decisions and actions:** Maintain an audit trail for accountability and review.
+- **Prevent unauthorized actions:** Block attempts to reuse approvals or change approved operations.
+- **Recover after restart:** Preserve approval records in a local database.
+
+### Example: AI-controlled financial operations
+
+The system demonstrates different levels of AI autonomy using simulated payments:
+
+| Payment amount | Governance decision |
+|---|---|
+| €2,000 | AI agent can proceed automatically |
+| €12,000 | Human approval required |
+| €60,000 | Operation blocked |
+
+**No real payments are made.**
+
+### Technical implementation
+
+AI-A05 uses Python, FastAPI, Open Policy Agent (OPA), JWT authentication, SQLite, and the Model Context Protocol (MCP).
+
+It integrates with AI-A04 to demonstrate controlled access to business tools.
+
+AI-A05 is a working research and engineering prototype, not a production-ready security platform. Additional security controls and operational infrastructure would be necessary before deployment in a real enterprise environment.
 
 ## Trust boundary and limitations
 
