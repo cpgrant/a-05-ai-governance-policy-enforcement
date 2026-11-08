@@ -47,6 +47,21 @@ A05 can enforce its checks only on requests that pass through A05. A04 remains i
 
 See [the Day 4 security and operations report](docs/reports/AI-A05-Day-4-Security-and-Operational-Readiness.md) for the threat model, control evidence, startup/recovery steps, and remaining gaps. See the [architecture specification](docs/AI-A05-Architecture-Specification.md) for the design notes.
 
+## Reports & Documentation
+
+AI-A05 includes three complementary reports for different audiences.
+
+| Report | Audience | Description |
+|---|---|---|
+| [Business Governance & Risk Assessment](docs/reports/AI-A05-Business-Governance-and-Risk-Assessment.md) | Business leaders, risk managers, consultants | Business risks, governance requirements, accountability, regulatory considerations and deployment readiness. |
+| [Comprehensive Technical Project Report](docs/reports/AI-A05-Comprehensive-Technical-Project-Report.md) | Enterprise architects, technical leaders, engineers | Complete four-day architecture, implementation, integration, testing and results. |
+| [Security & Operational Readiness Report](docs/reports/AI-A05-Day-4-Security-and-Operational-Readiness.md) | Security architects, engineers | Security controls, threat model, operational validation, known limitations and recovery procedures. |
+
+**Additional architecture documentation**
+
+- [Architecture Specification](docs/AI-A05-Architecture-Specification.md)
+- [Architecture Decision Records](docs/adr/)
+
 ## Infographics
 
 | Day | Infographic |
