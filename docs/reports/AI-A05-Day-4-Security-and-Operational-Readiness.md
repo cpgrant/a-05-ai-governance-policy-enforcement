@@ -19,7 +19,17 @@ The key external trust boundary remains open: A04's local policy uses `AI_A04_RO
 5. **A05 → A04 MCP:** The A05 adapter authorizes the JWT-derived role, validates the known call shape, records authorization before subprocess launch, restricts invocation to `get_customer`, and validates the result. Its child process receives a small environment allowlist plus `AI_A04_ROLE=reader`; A04 loads its own database settings from its project `.env`. This only governs calls through this adapter.
 6. **Direct A04 access:** A04's development policy treats an environment variable as the role and does not authenticate the A05 identity. Anyone able to launch A04 or select its environment may choose that role. Any transport exposed outside the adapter is not protected by A05.
 
-The updated component view is [diagrams/02-component-architecture.mmd](../../diagrams/02-component-architecture.mmd). The approval state flow is [diagrams/04-approval-lifecycle.mmd](../../diagrams/04-approval-lifecycle.mmd).
+## Architecture diagrams
+
+The Mermaid sources and their rendered images describe the implemented prototype, including the open A04 boundary and the SQLite consume-before-simulate crash window.
+
+| Diagram | Mermaid source | PNG | SVG |
+|---|---|---|---|
+| System context | [Source](../../diagrams/01-system-context.mmd) | [PNG](../../diagrams/rendered/01-system-context.png) | [SVG](../../diagrams/rendered/01-system-context.svg) |
+| Component architecture | [Source](../../diagrams/02-component-architecture.mmd) | [PNG](../../diagrams/rendered/02-component-architecture.png) | [SVG](../../diagrams/rendered/02-component-architecture.svg) |
+| Policy and execution sequence | [Source](../../diagrams/03-policy-decision-sequence.mmd) | [PNG](../../diagrams/rendered/03-policy-decision-sequence.png) | [SVG](../../diagrams/rendered/03-policy-decision-sequence.svg) |
+| Approval lifecycle | [Source](../../diagrams/04-approval-lifecycle.mmd) | [PNG](../../diagrams/rendered/04-approval-lifecycle.png) | [SVG](../../diagrams/rendered/04-approval-lifecycle.svg) |
+| Audit and operational recovery | [Source](../../diagrams/05-audit-operational-recovery.mmd) | [PNG](../../diagrams/rendered/05-audit-operational-recovery.png) | [SVG](../../diagrams/rendered/05-audit-operational-recovery.svg) |
 
 ## Threat model and review findings
 

@@ -14,11 +14,11 @@ flowchart TB
         APPROVAL --> JSONL
         API --> MCPAUTH["MCP authorization + argument validation"]
         MCPAUTH --> MCPOPA["OPA MCP policy"]
-        MCPAUTH --> ADAPTER["A05 A04 adapter"]
+        ADAPTER["A05 A04 adapter helper"] --> MCPAUTH
         ADAPTER --> MCPJSONL["A04 adapter JSONL audit"]
     end
 
-    ADAPTER -->|"limited synthetic call; child env role"| A04["A04 MCP process"]
+    ADAPTER -->|"synthetic get_customer only, reduced child environment"| A04["A04 MCP process"]
     DIRECT["Direct A04 clients"] --> A04
     A04 -. "AI_A04_ROLE is client controlled in A04 development policy" .-> RISK["A05 does not protect this entry point"]
 

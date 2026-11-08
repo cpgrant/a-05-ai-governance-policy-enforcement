@@ -1,28 +1,27 @@
 stateDiagram-v2
-    [*] --> Requested
+    [*] --> PENDING: Policy requires approval, insert row
 
-    Requested --> Pending: Valid request
-    Requested --> Rejected: Invalid request
+    PENDING --> APPROVED: Finance approver decision
+    PENDING --> REJECTED: Finance approver rejection
+    PENDING --> EXPIRED: Expiry noticed during get / decide / consume
 
-    Pending --> Approved: Authorized approver
-    Pending --> Rejected: Approval denied
-    Pending --> Expired: Deadline exceeded
-    Pending --> Rejected: Approval decision recorded
+    APPROVED --> APPROVED: Current policy denies or audit write fails
+    APPROVED --> EXPIRED: Expiry noticed before consumption
+    APPROVED --> CONSUMED: Exact requester + operation digest, atomic consume
 
-    Approved --> Revalidating: Execution requested
+    CONSUMED --> [*]
+    REJECTED --> [*]
+    EXPIRED --> [*]
 
-    Revalidating --> Authorized: Policy and scope valid
-    Revalidating --> Rejected: Policy or scope invalid
-    Revalidating --> Expired: Approval expired
+    note right of PENDING
+        SQLite stores requester, digest, created/expiry times and status.
+        CREATED / APPROVED / REJECTED / EXPIRED events are persisted
+        with their state changes. Expiration is lazy, when state is read
+        or changed.
+    end note
 
-    Authorized --> Executed: Protected action succeeds
-    Authorized --> Failed: Execution fails
-
-    state "SQLite state + lifecycle event transaction" as Durable
-    Pending --> Durable: Created / decided / expired
-    Authorized --> Durable: One-time consumption
-
-    Executed --> [*]
-    Failed --> [*]
-    Rejected --> [*]
-    Expired --> [*]
+    note right of CONSUMED
+        CONSUMED state and event commit before the simulated handler runs.
+        A process crash after consume can leave the operation unexecuted.
+        this prototype has no transactional outbox or retry recovery.
+    end note

@@ -1,44 +1,64 @@
 sequenceDiagram
     autonumber
-    participant A as AI Agent
-    participant G as Governance API
-    participant P as Enforcement Point
-    participant O as OPA
-    participant H as Human Approval
-    participant T as Protected Tool
-    participant L as Audit Service
+    participant C as Caller
+    participant API as A05 FastAPI
+    participant JWT as JWT verifier
+    participant OPA as Local OPA
+    participant DB as SQLite approval store
+    participant LOG as JSONL audit
+    participant M as Finance approver
+    participant SIM as Simulated payment handler
 
-    A->>G: Request action
-    G->>G: Authenticate caller
-    G->>P: Evaluate authorized request
-    P->>O: Evaluate policies
-    O-->>P: Policy result
-
-    alt PERMIT
-        P->>P: Verify obligations
-        P->>L: Record authorization before execution
-        alt Audit unavailable
-            P-->>A: Fail closed; do not execute
-        else Audit recorded
-        P->>T: Execute authorized action
-        T-->>P: Execution result
-        P->>L: Record execution outcome
-        P-->>A: Return result
-        end
-    else REQUIRE_APPROVAL
-        P->>H: Create scoped approval request
-        H-->>P: Approval result
-        alt Approved
-            P->>O: Re-evaluate current authorization
-            O-->>P: Updated policy decision
-            opt Authorization permits execution
-                P->>L: Record authorization before consume
-                P->>T: Execute exact approved action
+    Note over C,SIM: Finance payment workflow. The generic /tools/execute path returns REQUIRE_APPROVAL without creating an approval.
+    C->>API: Payment request with bearer token
+    API->>JWT: Verify token and derive identity
+    alt Invalid token or key unavailable
+        JWT-->>API: Reject or unavailable
+        API-->>C: 401 or 503, no execution
+    else Identity verified
+        API->>OPA: Evaluate agent, payment.create, erp.payments and arguments
+        alt OPA error or DENY
+            OPA-->>API: DENY
+            API-->>C: Not executed
+        else PERMIT
+            OPA-->>API: PERMIT
+            API->>LOG: Append authorization event before action
+            LOG-->>API: Recorded or write failure
+            opt Audit recorded
+                API->>SIM: Simulate payment
+                SIM-->>API: Simulated result
+                API->>LOG: Append execution outcome
+                API-->>C: Return result
+            end
+        else REQUIRE_APPROVAL
+            OPA-->>API: REQUIRE_APPROVAL
+            API->>DB: Persist PENDING approval and CREATED event
+            DB-->>API: Approval ID and expiry
+            API-->>C: PENDING_APPROVAL
+            M->>API: Decide with finance_approver identity
+            API->>DB: Persist APPROVED or REJECTED and event
+            DB-->>API: Decision status
+            C->>API: Execute same operation and approval ID
+            API->>OPA: Re-evaluate current policy
+            alt Policy error or no longer requires approval
+                OPA-->>API: Deny
+                API-->>C: Not executed, approval not consumed
+            else Still requires approval
+                OPA-->>API: REQUIRE_APPROVAL
+                API->>LOG: Append authorization event before consume
+                LOG-->>API: Recorded or write failure
+                opt Audit recorded
+                    API->>DB: Atomically consume exact requester and digest
+                    DB-->>API: CONSUMED or consume denied
+                    opt Consumed
+                        API->>SIM: Simulate payment
+                        SIM-->>API: Simulated result
+                        API->>LOG: Append execution outcome
+                        API-->>C: Return result
+                    end
+                end
             end
         end
-        P->>L: Approval lifecycle is persisted in SQLite
-        P-->>A: Return status or result
-    else DENY
-        P->>L: Record denial
-        P-->>A: Action denied
     end
+
+    Note over DB,LOG: Diagram 05 shows audit failures, database outages, restart recovery, and the crash window after consumption.

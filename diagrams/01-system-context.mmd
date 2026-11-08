@@ -1,30 +1,24 @@
-flowchart TB
-    A02["A02: Agent Orchestration"]
-    A03["A03: Enterprise RAG"]
-    A04["A04: MCP Integration"]
-    A06["A06: Digital Business Twin"]
+flowchart LR
+    CLIENT["Authenticated caller"] --> API["A05 FastAPI prototype"]
 
-    A05["A05: Governance Platform"]
+    subgraph A05["Implemented local A05 boundary"]
+        API --> JWT["JWT verification\nconfigured public key"]
+        API --> OPA["Local OPA binary\nfinance.rego / mcp.rego"]
+        API --> FIN["Finance workflow +\ntrusted tool registry"]
+        FIN --> SIM["Simulated payment handler"]
+        FIN --> SQLITE[("SQLite approvals +\nlifecycle events")]
+        FIN --> AUDIT["Local JSONL audit"]
+        API --> MCP["MCP authorization endpoint"]
+        MCP --> OPA
+        ADAPTER["A05 → A04 adapter helper"] --> OPA
+        ADAPTER --> MCPAUDIT["A04 adapter JSONL audit"]
+    end
 
-    OPA["OPA: Policy Evaluation"]
-    ID["Identity Provider"]
-    HUMAN["Human Approver"]
-    DB["Audit and Approval Storage"]
-    TOOLS["Protected Enterprise Tools"]
+    ADAPTER -->|"synthetic get_customer only"| A04["A04 MCP process"]
+    DIRECT["Direct A04 caller"] --> A04
+    A04 -. "Development role comes from AI_A04_ROLE" .-> GAP["Not protected by A05"]
 
-    A02 --> A05
-    A03 --> A05
-    A04 --> A05
-    A06 --> A05
-
-    A05 --> OPA
-    A05 --> ID
-    A05 <--> HUMAN
-    A05 --> DB
-    A05 -->|"Authorized execution only"| TOOLS
-
-    classDef governance fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
-    classDef external fill:#f1f5f9,stroke:#64748b,color:#0f172a
-
-    class A05 governance
-    class A02,A03,A04,A06,OPA,ID,HUMAN,DB,TOOLS external
+    classDef implemented fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef boundary fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+    class API,JWT,OPA,FIN,SIM,SQLITE,AUDIT,MCP,ADAPTER,MCPAUDIT implemented
+    class A04,DIRECT,GAP boundary

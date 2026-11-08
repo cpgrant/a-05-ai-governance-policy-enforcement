@@ -1,0 +1,62 @@
+flowchart TB
+    CALLER["Authenticated caller"] --> API["A05 finance API"]
+    API --> JWT{"JWT valid and key available?"}
+    JWT -->|"No"| AUTHSTOP["401 / 503\nNo operation executes"]
+    JWT -->|"Yes"| OPA{"OPA decision"}
+    OPA -->|"Unavailable / invalid / DENY"| POLICY_STOP["Fail closed\nNo operation executes"]
+
+    OPA -->|"PERMIT"| PREAUDIT["Append authorization event\nJSONL, fsync"]
+    PREAUDIT -->|"Write failure"| AUDIT_STOP["Fail closed\nDo not call handler"]
+    PREAUDIT -->|"Recorded"| SIM["Simulated payment handler"]
+    SIM --> POSTAUDIT["Append execution outcome\nJSONL, fsync"]
+    POSTAUDIT --> RESULT["Return simulation result"]
+    POSTAUDIT --> POSTFAIL["Action already ran, audit error propagates\nNo rollback"]
+
+    OPA -->|"REQUIRE_APPROVAL"| CREATE["BEGIN IMMEDIATE\nInsert PENDING + CREATED event"]
+    CREATE -->|"SQLite failure"| DBSTOP["No approval response\nNo execution"]
+    CREATE -->|"Commit"| PENDING[("SQLite approvals + events")]
+    PENDING --> EXPIRY_CHECK["Check expiry on get, decide, or consume"]
+    EXPIRY_CHECK -->|"Expired"| EXPIRED["Persist EXPIRED + event"]
+    EXPIRY_CHECK -->|"Not expired"| APPROVE{"Authenticated finance_approver decision"}
+    APPROVE -->|"Reject"| DECISION_DB["Persist decision + lifecycle event"]
+    APPROVE -->|"Approve"| DECISION_DB
+    DECISION_DB -->|"Reject committed"| REJECTED["REJECTED"]
+    DECISION_DB -->|"Approve committed"| APPROVED["APPROVED"]
+    DECISION_DB -->|"SQLite failure"| DECISION_FAIL["Decision fails\nNo execution"]
+    APPROVED --> REEVAL{"Re-evaluate current policy"}
+    REEVAL -->|"OPA unavailable / no longer requires approval"| KEEP["Deny execution\nApproval remains approved unless expired"]
+    REEVAL -->|"Still requires approval"| PREAPPROVALAUDIT["Append authorization event\nbefore consumption"]
+    PREAPPROVALAUDIT -->|"Write failure"| KEEP
+    PREAPPROVALAUDIT -->|"Recorded"| CONSUME["BEGIN IMMEDIATE\nConditional requester + digest + expiry + status update"]
+    CONSUME -->|"Invalid / expired / reused / DB failure"| CONSUME_STOP["Do not call handler"]
+    CONSUME -->|"Commit CONSUMED + event"| SIM
+
+    subgraph Restart["Restart and recovery"]
+        STOP["Process stopped"] --> DBFILE["Existing SQLite DB remains on disk"]
+        DBFILE --> START["New process opens DB\nCREATE TABLE IF NOT EXISTS"]
+        START -->|"Open succeeds"| LOAD["Existing approval rows and lifecycle events remain available"]
+        START -->|"Open or initialize fails"| DBFAIL
+        DBFAIL["DB missing permissions / corrupt / locked past timeout"] --> STARTFAIL["Startup or request fails\nNo approval execution"]
+    end
+    PENDING -. "durable rows" .-> DBFILE
+    CONSUME --> CRASH["Crash after consume, before handler\nStatus remains CONSUMED, no automatic retry"]
+
+    subgraph MCP["A05-to-A04 adapter helper"]
+        MCPCALL["JWT-derived role + validated tool args"] --> MCPOP{"A05 MCP policy"}
+        MCPOP -->|"DENY / OPA failure"| MCPDENYLOG["Write DENY authorization event"]
+        MCPDENYLOG -->|"Recorded"| MCPNO["No child process"]
+        MCPDENYLOG -->|"Audit failure"| MCPNO
+        MCPOP -->|"PERMIT"| MCPPRE["Write authorization audit"]
+        MCPPRE -->|"Audit failure"| MCPNO
+        MCPPRE -->|"Recorded"| CHILD["Invoke A04 child\nget_customer only"]
+        CHILD -->|"Timeout / bad response"| MCPFAIL["Write FAILED execution event\nRaise adapter error"]
+        CHILD -->|"Valid response"| MCPSUCCESS["Write SUCCESS execution event"]
+    end
+    DIRECT["Direct A04 entry point"] -. "Not covered by A05, A04 uses AI_A04_ROLE" .-> OPEN["A04-side trust boundary remains open"]
+
+    classDef good fill:#dcfce7,stroke:#15803d,color:#14532d
+    classDef fail fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+    classDef state fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    class PREAUDIT,PREAPPROVALAUDIT,CREATE,CONSUME,PENDING,APPROVED,REJECTED,LOAD good
+    class AUTHSTOP,POLICY_STOP,AUDIT_STOP,DBSTOP,DECISION_FAIL,KEEP,CONSUME_STOP,STARTFAIL,CRASH,MCPNO,MCPFAIL,OPEN,POSTFAIL fail
+    class DBFILE,START,LOAD,PENDING state

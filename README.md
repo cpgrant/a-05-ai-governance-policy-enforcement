@@ -15,7 +15,19 @@ AI-A05 is a small, local reference implementation of policy enforcement for agen
 
 A05 can enforce its checks only on requests that pass through A05. A04 remains independently runnable and its development policy reads `AI_A04_ROLE` from the process environment. A client that can launch or reach A04 directly can set that variable; A05's adapter-side authorization does not secure that entry point. Closing this boundary requires an A04-side change: remove client-selected roles, authenticate A05-issued identity or a mutually authenticated service identity at A04, and enforce tool/action/argument authorization inside A04 for every transport. This repository does not modify A04.
 
-See [the Day 4 security and operations report](docs/reports/AI-A05-Day-4-Security-and-Operational-Readiness.md) for the threat model, control evidence, startup/recovery steps, and remaining gaps. See the [architecture specification](docs/AI-A05-Architecture-Specification.md) and diagrams for system boundaries.
+See [the Day 4 security and operations report](docs/reports/AI-A05-Day-4-Security-and-Operational-Readiness.md) for the threat model, control evidence, startup/recovery steps, and remaining gaps. See the [architecture specification](docs/AI-A05-Architecture-Specification.md) for the design notes.
+
+## Architecture diagrams
+
+These five diagrams describe the implemented local prototype and its known trust boundaries. Each source is available as Mermaid, PNG, and SVG in `diagrams/` and `diagrams/rendered/`.
+
+| Diagram | Mermaid source | PNG | SVG |
+|---|---|---|---|
+| System context | [01-system-context.mmd](diagrams/01-system-context.mmd) | [PNG](diagrams/rendered/01-system-context.png) | [SVG](diagrams/rendered/01-system-context.svg) |
+| Component architecture | [02-component-architecture.mmd](diagrams/02-component-architecture.mmd) | [PNG](diagrams/rendered/02-component-architecture.png) | [SVG](diagrams/rendered/02-component-architecture.svg) |
+| Policy and execution sequence | [03-policy-decision-sequence.mmd](diagrams/03-policy-decision-sequence.mmd) | [PNG](diagrams/rendered/03-policy-decision-sequence.png) | [SVG](diagrams/rendered/03-policy-decision-sequence.svg) |
+| Approval lifecycle | [04-approval-lifecycle.mmd](diagrams/04-approval-lifecycle.mmd) | [PNG](diagrams/rendered/04-approval-lifecycle.png) | [SVG](diagrams/rendered/04-approval-lifecycle.svg) |
+| Audit and operational recovery | [05-audit-operational-recovery.mmd](diagrams/05-audit-operational-recovery.mmd) | [PNG](diagrams/rendered/05-audit-operational-recovery.png) | [SVG](diagrams/rendered/05-audit-operational-recovery.svg) |
 
 ## Local setup
 
