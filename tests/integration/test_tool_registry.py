@@ -7,7 +7,7 @@ from src.tools.registry import (
     UnknownToolError,
     DuplicateToolError,
 )
-from src.tools.payment import simulated_payment
+from src.tools.payment import simulated_payment, valid_simulated_payment
 
 
 def registry(tmp_path):
@@ -21,6 +21,7 @@ def registry(tmp_path):
             action="payment.create",
             resource="erp.payments",
             handler=simulated_payment,
+            validate=valid_simulated_payment,
         )
     )
 
@@ -81,6 +82,7 @@ def test_duplicate_registration_rejected(tmp_path):
                 action="payment.create",
                 resource="erp.payments",
                 handler=simulated_payment,
+                validate=valid_simulated_payment,
             )
         )
 
@@ -93,3 +95,22 @@ def test_unknown_agent_denied(tmp_path):
     )
 
     assert result.executed is False
+
+
+def test_extra_payment_argument_is_denied_before_handler(tmp_path):
+    called = []
+    r = TrustedToolRegistry(audit=AuditRecorder(tmp_path / "audit.jsonl"))
+    r.register(RegisteredTool(
+        name="finance.payment.create",
+        action="payment.create",
+        resource="erp.payments",
+        handler=lambda parameters: called.append(parameters),
+        validate=valid_simulated_payment,
+    ))
+    result = r.execute(
+        "finance.payment.create", "finance-agent",
+        {"amount": 2500, "currency": "EUR", "approved": True},
+    )
+    assert result.executed is False
+    assert result.decision.decision.value == "DENY"
+    assert called == []

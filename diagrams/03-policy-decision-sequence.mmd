@@ -16,10 +16,15 @@ sequenceDiagram
 
     alt PERMIT
         P->>P: Verify obligations
+        P->>L: Record authorization before execution
+        alt Audit unavailable
+            P-->>A: Fail closed; do not execute
+        else Audit recorded
         P->>T: Execute authorized action
         T-->>P: Execution result
-        P->>L: Record decision and outcome
+        P->>L: Record execution outcome
         P-->>A: Return result
+        end
     else REQUIRE_APPROVAL
         P->>H: Create scoped approval request
         H-->>P: Approval result
@@ -27,10 +32,11 @@ sequenceDiagram
             P->>O: Re-evaluate current authorization
             O-->>P: Updated policy decision
             opt Authorization permits execution
+                P->>L: Record authorization before consume
                 P->>T: Execute exact approved action
             end
         end
-        P->>L: Record approval and outcome
+        P->>L: Approval lifecycle is persisted in SQLite
         P-->>A: Return status or result
     else DENY
         P->>L: Record denial

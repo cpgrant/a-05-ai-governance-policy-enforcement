@@ -7,6 +7,7 @@ stateDiagram-v2
     Pending --> Approved: Authorized approver
     Pending --> Rejected: Approval denied
     Pending --> Expired: Deadline exceeded
+    Pending --> Rejected: Approval decision recorded
 
     Approved --> Revalidating: Execution requested
 
@@ -16,6 +17,10 @@ stateDiagram-v2
 
     Authorized --> Executed: Protected action succeeds
     Authorized --> Failed: Execution fails
+
+    state "SQLite state + lifecycle event transaction" as Durable
+    Pending --> Durable: Created / decided / expired
+    Authorized --> Durable: One-time consumption
 
     Executed --> [*]
     Failed --> [*]

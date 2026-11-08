@@ -1,7 +1,7 @@
 # AI-A05 — AI Governance & Policy Enforcement
 
-**Version:** 0.1
-**Status:** Day 1 Architecture Baseline
+**Version:** 0.2
+**Status:** Prototype specification with Day 4 implementation notes
 **Python:** 3.12.3
 **Portfolio:** AI Architecture Series
 
@@ -212,3 +212,13 @@ certification, comprehensive compliance coverage,
 or complete tamper-proof audit infrastructure.
 
 Those require additional engineering and validation.
+
+## 14. Day 4 Demonstrated Topology and Trust Boundaries
+
+The running prototype implements the FastAPI API, JWT verification, local OPA/Rego evaluation, a server-owned simulated finance tool, local JSONL audit output, and a SQLite-backed finance approval state machine. The `runtime/` directory is local operational state and is excluded from version control. Approval rows and lifecycle event rows are stored in one SQLite database; lifecycle state changes and their corresponding events use a transaction. Consumption is serialized with `BEGIN IMMEDIATE` and a conditional update, and remains bound to the requester and a digest of action, resource, amount, and currency.
+
+The A05 MCP integration is a client/adapter boundary, not an independently protected MCP server. For calls through the A05 adapter, A05 authenticates the JWT, checks the identity role in the A05 policy, validates the known tool argument shape, audits authorization before invocation, and restricts actual execution to the synthetic `get_customer` operation. The adapter sets `AI_A04_ROLE=reader` only for its own child process. A04's development policy reads that environment value and does not verify the A05 agent identity. A04 may also be launched or contacted outside the adapter. Therefore A05 cannot claim to secure direct A04 access. A04 must independently authenticate its caller, derive authorization from trusted identity, validate arguments and enforce policy at each MCP tool boundary before that claim can be made.
+
+SQLite is suitable for restart recovery and single-host concurrency in this demonstrator; it is not a distributed lock service, HA database, or tamper-resistant evidence store. JSONL and SQLite files require OS-level access protection, backup, retention, and integrity controls in any deployment. The implementation does not provide key rotation, token revocation, rate limiting, network isolation, process sandboxing, or production secret management.
+
+The complete control-by-control assessment, adversarial validation, and safe operation steps are in [the Day 4 report](reports/AI-A05-Day-4-Security-and-Operational-Readiness.md).

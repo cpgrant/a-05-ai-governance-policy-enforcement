@@ -4,9 +4,11 @@
 Local prototype using simulated payments only.
 """
 
+from pathlib import Path
 from typing import Any
 
 from src.approvals.engine import ApprovalEngine
+from src.audit.recorder import AuditRecorder
 from src.contracts.policy import (
     GovernanceRequest,
     PolicyDecision,
@@ -16,8 +18,9 @@ from src.tools.payment import simulated_payment
 
 
 class FinanceApprovalWorkflow:
-    def __init__(self):
-        self.approvals = ApprovalEngine()
+    def __init__(self, db_path=None, audit: AuditRecorder | None = None):
+        self.approvals = ApprovalEngine(db_path)
+        self.audit = audit or AuditRecorder(Path("runtime/audit.jsonl"))
 
     @staticmethod
     def _operation(
@@ -58,6 +61,14 @@ class FinanceApprovalWorkflow:
 
         decision = self._evaluate(agent_id, operation)
 
+        if decision.decision == PolicyDecision.PERMIT:
+            if not self._audit_authorization(agent_id, operation, decision):
+                return {
+                    "status": "DENIED",
+                    "executed": False,
+                    "reason": "Required authorization audit failed",
+                }
+
         if decision.decision == PolicyDecision.DENY:
             return {
                 "status": "DENIED",
@@ -72,6 +83,7 @@ class FinanceApprovalWorkflow:
                     "currency": currency,
                 }
             )
+            self._audit_execution(agent_id, operation, decision, "success")
 
             return {
                 "status": "EXECUTED",
@@ -137,6 +149,13 @@ class FinanceApprovalWorkflow:
                 "reason": "Current policy does not authorize approval-based execution",
             }
 
+        if not self._audit_authorization(agent_id, operation, decision):
+            return {
+                "status": "DENIED",
+                "executed": False,
+                "reason": "Required authorization audit failed",
+            }
+
         # Checks requester, exact operation, expiry
         # and one-time use.
         authorized = self.approvals.consume(
@@ -159,6 +178,7 @@ class FinanceApprovalWorkflow:
                 "currency": currency,
             }
         )
+        self._audit_execution(agent_id, operation, decision, "success")
 
         return {
             "status": "EXECUTED",
@@ -166,3 +186,35 @@ class FinanceApprovalWorkflow:
             "approval_id": approval_id,
             "result": result,
         }
+
+    def _audit_authorization(self, agent_id, operation, decision) -> bool:
+        request = GovernanceRequest(
+            request_id=decision.request_id,
+            agent_id=agent_id,
+            action=operation["action"],
+            resource=operation["resource"],
+            context={key: value for key, value in operation.items()
+                     if key not in {"action", "resource"}},
+        )
+        try:
+            self.audit.record(
+                request, decision, executed=False,
+                execution_status="evaluated", event_type="authorization",
+            )
+            return True
+        except Exception:
+            return False
+
+    def _audit_execution(self, agent_id, operation, decision, status):
+        request = GovernanceRequest(
+            request_id=decision.request_id,
+            agent_id=agent_id,
+            action=operation["action"],
+            resource=operation["resource"],
+            context={key: value for key, value in operation.items()
+                     if key not in {"action", "resource"}},
+        )
+        self.audit.record(
+            request, decision, executed=True,
+            execution_status=status, event_type="execution",
+        )

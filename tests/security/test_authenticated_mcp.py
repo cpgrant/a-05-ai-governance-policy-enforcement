@@ -5,8 +5,8 @@ from src.api.main import app
 client = TestClient(app)
 
 
-def call(token, tool, extra=None):
-    payload = {"tool_name": tool}
+def call(token, tool, arguments=None, extra=None):
+    payload = {"tool_name": tool, "arguments": arguments or {}}
 
     if extra:
         payload.update(extra)
@@ -21,7 +21,7 @@ def call(token, tool, extra=None):
 def test_reader_authorized(agent_token):
     token = agent_token(roles=["reader"])
 
-    response = call(token, "get_inventory_status_db")
+    response = call(token, "get_inventory_status_db", {"sku": "SKU-001"})
 
     assert response.status_code == 200
     assert response.json()["decision"] == "PERMIT"
@@ -30,7 +30,9 @@ def test_reader_authorized(agent_token):
 def test_finance_reader_authorized(agent_token):
     token = agent_token(roles=["finance_reader"])
 
-    response = call(token, "list_customer_invoices_db")
+    response = call(token, "list_customer_invoices_db", {
+        "customer_code": "C001", "as_of": "2026-11-08"
+    })
 
     assert response.status_code == 200
     assert response.json()["decision"] == "PERMIT"
@@ -39,7 +41,7 @@ def test_finance_reader_authorized(agent_token):
 def test_finance_reader_cannot_access_erp(agent_token):
     token = agent_token(roles=["finance_reader"])
 
-    response = call(token, "get_inventory_status_db")
+    response = call(token, "get_inventory_status_db", {"sku": "SKU-001"})
 
     assert response.status_code == 200
     assert response.json()["decision"] == "DENY"
@@ -51,6 +53,7 @@ def test_role_spoofing_rejected(agent_token):
     response = call(
         token,
         "get_customer_db",
+        {"customer_code": "C001"},
         extra={"roles": ["reader"]},
     )
 

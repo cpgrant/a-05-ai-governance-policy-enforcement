@@ -66,6 +66,7 @@ def execute_a04_tool(
         decision = authorize_mcp_tool(
             identity=identity,
             tool_name=tool_name,
+            arguments=arguments,
         )
     except Exception:
         audit(
@@ -175,7 +176,14 @@ async def main():
 asyncio.run(main())
 """.replace("CUSTOMER_ID", json.dumps(customer_id))
 
-    env = os.environ.copy()
+    # The child needs ordinary runtime locale/path settings only. A04 loads
+    # its database settings from its own project .env; do not inherit A05
+    # credentials, tokens, or unrelated service secrets.
+    env = {
+        key: os.environ[key]
+        for key in ("PATH", "LANG", "LC_ALL", "TZ")
+        if key in os.environ
+    }
 
     # A04 development-only role mechanism.
     # Not a trusted production identity boundary.
@@ -219,15 +227,15 @@ asyncio.run(main())
         subprocess.SubprocessError,
         ValueError,
         TypeError,
-    ):
+    ) as exc:
         audit(
             "execution",
             "FAILED",
-            "MCP execution or response validation failed",
+            f"MCP execution or response validation failed ({type(exc).__name__})",
         )
 
         raise RuntimeError(
-            "A04 MCP execution failed"
+            f"A04 MCP execution failed ({type(exc).__name__})"
         ) from None
 
     # --------------------------------------------------

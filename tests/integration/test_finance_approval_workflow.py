@@ -177,3 +177,20 @@ def test_self_approval_blocked(workflow):
             "finance-agent",
             True,
         )
+
+
+def test_required_audit_failure_prevents_immediate_execution(workflow, monkeypatch):
+    monkeypatch.setattr(workflow.audit, "record", lambda *a, **k: (_ for _ in ()).throw(OSError()))
+    result = workflow.request_payment("finance-agent", 2000)
+    assert result["executed"] is False
+    assert result["reason"] == "Required authorization audit failed"
+
+
+def test_required_audit_failure_does_not_consume_approval(workflow, monkeypatch):
+    approval_id = approve_payment(workflow)
+    monkeypatch.setattr(workflow.audit, "record", lambda *a, **k: (_ for _ in ()).throw(OSError()))
+    result = workflow.execute_approved_payment(
+        approval_id, "finance-agent", 12000
+    )
+    assert result["executed"] is False
+    assert workflow.approvals.get(approval_id).status == "APPROVED"

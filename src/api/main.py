@@ -101,7 +101,7 @@ from src.tools.registry import (
     TrustedToolRegistry,
     UnknownToolError,
 )
-from src.tools.payment import simulated_payment
+from src.tools.payment import simulated_payment, valid_simulated_payment
 
 
 class ToolExecutionRequest(BaseModel):
@@ -121,6 +121,7 @@ tool_registry.register(
         action="payment.create",
         resource="erp.payments",
         handler=simulated_payment,
+        validate=valid_simulated_payment,
     )
 )
 
@@ -159,6 +160,7 @@ class MCPAuthorizationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     tool_name: str = Field(min_length=1)
+    arguments: dict[str, Any] = Field(default_factory=dict)
 
 
 @app.post(
@@ -172,6 +174,7 @@ def authorize_mcp(
     return authorize_mcp_tool(
         identity=identity,
         tool_name=request.tool_name,
+        arguments=request.arguments,
     )
 
 

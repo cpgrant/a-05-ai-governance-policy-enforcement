@@ -1,4 +1,5 @@
 import json
+import stat
 
 from src.audit.recorder import AuditRecorder
 from src.contracts.policy import (
@@ -43,6 +44,7 @@ def test_audit_record_created(tmp_path):
     assert saved["agent_id"] == "finance-agent"
     assert saved["execution_status"] == "success"
     assert "context" not in saved
+    assert stat.S_IMODE((tmp_path / "audit.jsonl").stat().st_mode) == 0o600
 
 
 def test_multiple_audit_events(tmp_path):

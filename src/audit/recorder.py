@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
@@ -64,8 +65,21 @@ class AuditRecorder:
             self.path.parent.mkdir(
                 parents=True, exist_ok=True
             )
-            with self.path.open("a", encoding="utf-8") as f:
-                f.write(event.model_dump_json() + "\n")
-                f.flush()
+            flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND
+            fd = os.open(self.path, flags, 0o600)
+            try:
+                os.fchmod(fd, 0o600)
+                with os.fdopen(fd, "a", encoding="utf-8") as f:
+                    f.write(event.model_dump_json() + "\n")
+                    f.flush()
+                    os.fsync(f.fileno())
+            except BaseException:
+                # fdopen owns the descriptor once entered; close on failures
+                # that happen before ownership transfers as well.
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
+                raise
 
         return event

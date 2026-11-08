@@ -1,43 +1,28 @@
 flowchart TB
-    CLIENT["Enterprise AI Clients"]
+    CLIENT["Authenticated AI client"] --> API["A05 FastAPI"]
 
-    subgraph A05["AI-A05 Governance Platform"]
-        API["FastAPI Governance API"]
-        ID["Identity Verification"]
-        PEP["Policy Enforcement Point"]
-        PDP["Policy Decision Adapter"]
-        APPROVAL["Human Approval Service"]
-        AUDIT["Audit and Evidence"]
-        EXPLAIN["Explainability"]
-        SANDBOX["Sandbox Controller"]
-        AGENTS["Advisory Governance Agents"]
-
-        API --> ID
-        ID --> PEP
+    subgraph A05["A05 local prototype"]
+        API --> JWT["JWT verifier"]
+        API --> PDP["OPA policy adapter"]
+        API --> PEP["Trusted tool registry / PEP"]
         PEP --> PDP
-        PEP --> APPROVAL
-        PEP --> AUDIT
-        PDP --> EXPLAIN
-        PEP --> SANDBOX
-        AGENTS -.-> PDP
-        AGENTS -.-> AUDIT
+        PEP --> SIM["Simulated finance handler"]
+        API --> APPROVAL["Finance approval workflow"]
+        APPROVAL --> POLICY["OPA re-evaluation"]
+        APPROVAL --> SQLITE[("SQLite approval state + lifecycle events")]
+        PEP --> JSONL["JSONL audit"]
+        APPROVAL --> JSONL
+        API --> MCPAUTH["MCP authorization + argument validation"]
+        MCPAUTH --> MCPOPA["OPA MCP policy"]
+        MCPAUTH --> ADAPTER["A05 A04 adapter"]
+        ADAPTER --> MCPJSONL["A04 adapter JSONL audit"]
     end
 
-    OPA["Open Policy Agent / Rego"]
-    DB[("PostgreSQL")]
-    TOOLS["Protected Enterprise Tools"]
-    HUMAN["Human Approver"]
+    ADAPTER -->|"limited synthetic call; child env role"| A04["A04 MCP process"]
+    DIRECT["Direct A04 clients"] --> A04
+    A04 -. "AI_A04_ROLE is client controlled in A04 development policy" .-> RISK["A05 does not protect this entry point"]
 
-    CLIENT --> API
-    PDP --> OPA
-    APPROVAL <--> HUMAN
-    APPROVAL --> DB
-    AUDIT --> DB
-    SANDBOX --> TOOLS
-    PEP -->|"Authorized execution"| TOOLS
-
-    classDef core fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
-    classDef external fill:#f1f5f9,stroke:#64748b,color:#0f172a
-
-    class API,ID,PEP,PDP,APPROVAL,AUDIT,EXPLAIN,SANDBOX,AGENTS core
-    class CLIENT,OPA,DB,TOOLS,HUMAN external
+    classDef local fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef boundary fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+    class API,JWT,PDP,PEP,SIM,APPROVAL,SQLITE,JSONL,MCPAUTH,MCPOPA,ADAPTER local
+    class A04,DIRECT,RISK boundary

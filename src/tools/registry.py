@@ -2,7 +2,11 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from src.audit.recorder import AuditRecorder
-from src.contracts.policy import GovernanceRequest
+from src.contracts.policy import (
+    GovernanceRequest,
+    GovernanceDecision,
+    PolicyDecision,
+)
 from src.enforcement.pep import (
     EnforcementResult,
     PolicyEnforcementPoint,
@@ -23,6 +27,7 @@ class RegisteredTool:
     action: str
     resource: str
     handler: Callable[[dict[str, Any]], Any]
+    validate: Callable[[dict[str, Any]], bool] | None = None
 
 
 class TrustedToolRegistry:
@@ -57,6 +62,24 @@ class TrustedToolRegistry:
             resource=tool.resource,
             context=parameters,
         )
+
+        if not isinstance(parameters, dict) or (
+            tool.validate is not None and not tool.validate(parameters)
+        ):
+            decision = GovernanceDecision(
+                request_id=request.request_id,
+                decision=PolicyDecision.DENY,
+                policy_id="tool-validation",
+                policy_version="1.0",
+                reason="Tool arguments are invalid",
+            )
+            if self._pep.audit is not None:
+                self._pep.audit.record(
+                    request, decision, executed=False,
+                    execution_status="invalid_arguments",
+                    event_type="authorization",
+                )
+            return EnforcementResult(executed=False, decision=decision)
 
         return self._pep.execute(
             request,
