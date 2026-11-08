@@ -1,5 +1,8 @@
 # AI-A05 — Governance & Policy Enforcement
 
+![AI-A05 — Governance and Policy Enforcement Overview](infographics/ai-a05-0-governance-and-policy-enforcement.png)
+
+
 AI-A05 is a small, local reference implementation of policy enforcement for agent requests. It demonstrates authenticated policy evaluation, a server-owned simulated tool registry, an A05-to-A04 MCP adapter, finance approvals, and structured audit records. It is not a production platform.
 
 ## Current implementation
