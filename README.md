@@ -62,6 +62,11 @@ AI-A05 includes three complementary reports for different audiences.
 - [Architecture Specification](docs/AI-A05-Architecture-Specification.md)
 - [Architecture Decision Records](docs/adr/)
 
+
+## Research & Future Ideas
+
+- [IDR-001 — EU AI Act to Executable Policy](docs/idr/IDR-001-eu-ai-act-to-executable-policy.md) — Investigating how regulatory requirements could be translated into executable OPA/Rego policies, with human legal oversight.
+
 ## Infographics
 
 | Day | Infographic |
