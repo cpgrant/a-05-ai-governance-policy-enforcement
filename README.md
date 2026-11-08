@@ -17,6 +17,16 @@ A05 can enforce its checks only on requests that pass through A05. A04 remains i
 
 See [the Day 4 security and operations report](docs/reports/AI-A05-Day-4-Security-and-Operational-Readiness.md) for the threat model, control evidence, startup/recovery steps, and remaining gaps. See the [architecture specification](docs/AI-A05-Architecture-Specification.md) for the design notes.
 
+## Infographics
+
+| Day | Infographic |
+|---|---|
+| Day 1 | [AI Governance Architecture](infographics/ai-a05-1-AI%20Governance%20Architecture%20Infographic.png) |
+| Day 2 — variant 1 | [AI Governance Architecture](infographics/ai-a05-2-1-AI%20Governance%20Architecture%20Infographic.png) |
+| Day 2 — variant 2 | [AI Governance Day 2](infographics/ai-a05-2-2-AI%20Governance%20Day%202%20Infographic.png) |
+| Day 3 | [AI Governance Day 3](infographics/ai-a05-3-AI%20Governance%20Day%203%20Infographic.png) |
+| Day 4 | [AI Security Readiness](infographics/ai-a05-4%20AI%20Security%20Readiness%20Day%204.png) |
+
 ## Architecture diagrams
 
 These five diagrams describe the implemented local prototype and its known trust boundaries. Each source is available as Mermaid, PNG, and SVG in `diagrams/` and `diagrams/rendered/`.
